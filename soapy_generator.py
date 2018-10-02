@@ -1,4 +1,6 @@
+import numpy
 import numpy as np
+from matplotlib import pyplot
 from matplotlib import pyplot as plt
 import time
 
