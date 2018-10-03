@@ -61,3 +61,4 @@ class ToTensor(object):
         zernike, image = sample['zernike'], sample['image']
 
         return {'zernike': torch.from_numpy(zernike), 'image': torch.from_numpy(image)}
+

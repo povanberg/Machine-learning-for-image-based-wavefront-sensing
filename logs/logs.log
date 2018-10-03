@@ -1,0 +1,4 @@
+2018-10-03 22:19:26,510:INFO: Training launch: lr0.01_b4_e5
+2018-10-03 22:19:26,512:INFO: Training launch: lr0.001_b4_e5
+2018-10-03 22:22:43,372:INFO: Processes ended with exit code: [0, 0]
+2018-10-03 22:22:43,372:INFO: All trainings succesfully finished.

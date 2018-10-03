@@ -4,6 +4,7 @@ import torch.nn.functional as F
 
 torch.set_default_tensor_type('torch.DoubleTensor')
 
+
 class Net(nn.Module):
 
     def __init__(self):
@@ -21,7 +22,7 @@ class Net(nn.Module):
     def forward(self, x):
         # 128x128x2
         x = F.relu(self.conv1(x))         # 128x128x20
-        x = self.pool(x)                  # 64x64x20
+        x = self.pool(x)                  # 64x64x20    Todo: bottleneck
         x = F.relu(self.conv2(x))         # 64x64x40
         x = self.pool(x)                  # 32x32x40
         x = F.relu(self.conv3(x))         # 32x32x20
