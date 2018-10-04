@@ -1,0 +1,10 @@
+{
+    "best": "models/baseline/lr0.001_b4_e1",
+    "accuracy": 5637.2212818372245,
+    "experiments": [
+        {
+            "name": "models/baseline/lr0.001_b4_e1",
+            "accuracy": 5637.2212818372245
+        }
+    ]
+}
