@@ -3,7 +3,8 @@ import os
 import sys
 import argparse
 import logging
-from subprocess import Popen
+from subprocess import Popen, check_call
+from synthesize import get_metrics
 
 
 # This python script performs hyperparameters search
@@ -34,7 +35,8 @@ def launch_training_job(parent_dir, data_dir, params, processes):
     logging.info("Training launch: {}".format(job_name))
     cmd = "{python} train.py --model_dir={model_dir} --data_dir {data_dir}".format(python=PYTHON, model_dir=model_dir,
                                                                                   data_dir=data_dir)
-    proc = Popen(cmd, shell=True)
+    #proc = Popen(cmd, shell=True)
+    proc = check_call(cmd, shell=True)
     processes.append(proc)
 
 # Args parsing
@@ -74,6 +76,10 @@ for batch_size in batch_sizes:
             launch_training_job(args.models_dir, args.data_dir, params, processes)
 
 
-exit_codes = [p.wait() for p in processes]
+exit_codes = 0 #[p.wait() for p in processes]
+
+model_path = os.path.join(args.models_dir, params.model_version)
+get_metrics(model_path)
+
 logging.info('Processes ended with exit code: {}'.format(exit_codes))
 logging.info('All trainings succesfully finished.')

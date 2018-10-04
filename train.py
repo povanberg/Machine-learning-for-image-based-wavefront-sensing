@@ -31,8 +31,8 @@ if __name__ == '__main__':
     train_size = int(params.dev_split[0] * len(dataset))
     val_size = int(params.dev_split[1] * len(dataset))
     train_dataset, val_dataset = torch.utils.data.random_split(dataset, [train_size, val_size])
-    train_dataloader = DataLoader(train_dataset, batch_size=params.batch_size, shuffle=True, num_workers=1)
-    val_dataloader = DataLoader(val_dataset, batch_size=params.batch_size, shuffle=True, num_workers=1)
+    train_dataloader = DataLoader(train_dataset, batch_size=params.batch_size, shuffle=True, num_workers=4)
+    val_dataloader = DataLoader(val_dataset, batch_size=params.batch_size, shuffle=True, num_workers=4)
 
     # Load convolutional network
     net = Net()
@@ -44,12 +44,15 @@ if __name__ == '__main__':
     log_path = os.path.join(args.model_dir, 'logs.log')
     utils.set_logger(log_path)
 
+    start_time = time.time()
     for epoch in range(params.num_epochs):
 
         running_loss = 0.0
         log_every = len(train_dataloader) // 10
-        start_time = time.time()
+        epoch_time = time.time()
 
+        # Training
+        net.train()
         for i_batch, sample_batched in enumerate(train_dataloader):
 
             zernike = sample_batched['zernike']
@@ -62,62 +65,38 @@ if __name__ == '__main__':
             loss.backward()
             optimizer.step()
 
+            running_loss += float(loss)
             # Print statistics
             if (i_batch + 1) % (log_every) == 0:
                 logging.info('[%d, %5d] loss: %.3f time: %.3f s' %
-                      (epoch + 1, params.batch_size * (i_batch + 1), loss / log_every, time.time() - start_time))
+                      (epoch + 1, params.batch_size * (i_batch + 1), running_loss / log_every, time.time() - epoch_time))
                 running_loss = 0.0
-                start_time = time.time()
+                epoch_time = time.time()
+
+        # At the end of the epoch, do a pass on the validation set
+        net.eval()
+        val_loss = 0.0
+        for i_batch, sample_batched in enumerate(val_dataloader):
+
+            zernike = sample_batched['zernike']
+            image = sample_batched['image']
+
+            outputs = net(image)
+            loss = criterion(outputs, zernike)
+            val_loss += float(loss)
+
+        # Save best val metrics in a json file in the model directory
+        accuracy = val_loss / len(val_dataloader)
+        metrics_json_path = os.path.join(args.model_dir, "metrics.json")
+        metrics = utils.Params(metrics_json_path)
+        if not metrics.hasKey(metrics_json_path, 'accuracy') or metrics.accuracy > accuracy:
+            metrics.accuracy = accuracy
+            metrics.save(metrics_json_path)
+            checkpoint_path = os.path.join(args.model_dir, 'checkpoint.pth')
+            torch.save(net.state_dict(), checkpoint_path)
+        
+        logging.info('Validation loss: %.3f ' % (val_loss / len(val_dataloader)))
+
+    logging.info('Training finished in %.3f s' % (time.time() - start_time))
 
 
-    sample = val_dataset[0]
-    outputs = net(sample['image'].unsqueeze(0))
-    loss = criterion(outputs, sample['zernike'].unsqueeze(0))
-    print(sample['zernike'].unsqueeze(0))
-    print(outputs)
-    print(loss)
-
-"""
-for epoch in range(n_epochs):
-
-    running_loss = 0.0
-    print_every = n_batches // 10
-    start_time = time.time()
-
-    for i_batch, sample_batched in enumerate(train_dataloader):
-
-        zernike = sample_batched['zernike']
-        image = sample_batched['image']
-
-        # Set the parameter gradients to zero
-        optimizer.zero_grad()
-
-        # Forward pass, backward pass, optimize
-        outputs = net(image)
-        loss = criterion(outputs, zernike)
-        #print(outputs)
-        loss.backward()
-        optimizer.step()
-
-        # Print statistics
-        running_loss += loss
-        if (i_batch + 1) % (print_every + 1) == 0:
-            print('[%d, %5d] loss: %.3f time: %.3f s' %
-                  (epoch + 1, batch_size*(i_batch + 1), running_loss / print_every,  time.time() - start_time))
-            running_loss = 0.0
-            start_time = time.time()
-
-    # At the end of the epoch, do a pass on the validation set
-    val_loss = 0
-    for i_batch, sample_batched in enumerate(val_dataloader):
-
-        zernike = sample_batched['zernike']
-        image = sample_batched['image']
-
-        outputs = net(image)
-        loss = criterion(outputs, zernike)
-        val_loss += loss
-    print('Validation loss: %.3f ' % (val_loss / len(val_dataloader)))
-
-    print('Training finished in %.3f s' % (time.time() - start_time))
-"""

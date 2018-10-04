@@ -1,5 +1,6 @@
 import logging
 import json
+import os
 
 def set_logger(log_path):
     """
@@ -33,6 +34,12 @@ class Params():
     """
 
     def __init__(self, json_path):
+
+        if not os.path.exists(json_path):
+            with open(json_path, 'w') as f:
+                data = {}
+                json.dump(data, f, indent=4)
+
         with open(json_path) as f:
             params = json.load(f)
             self.__dict__.update(params)
@@ -47,7 +54,18 @@ class Params():
             params = json.load(f)
             self.__dict__.update(params)
 
+    def hasKey(self, json_path, key_name):
+        bool_key = False
+        with open(json_path) as f:
+            params = json.load(f)
+            if key_name in params:
+                bool_key = True
+
+        return bool_key
+
     @property
     def dict(self):
         """Gives dict-like access to Params instance by `params.dict['learning_rate']"""
         return self.__dict__
+
+
