@@ -20,6 +20,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
     # Load params
     json_path = os.path.join(args.model_dir, 'params.json')
     assert os.path.isfile(json_path), logging.error("No json configuration file found at {}".format(json_path))
@@ -36,6 +38,11 @@ if __name__ == '__main__':
 
     # Load convolutional network
     net = Net()
+    if torch.cuda.device_count() > 1:
+        logging("Model deployed on {} GPUs.".format(torch.cuda.device_count()))
+        net = nn.DataParallel(net)
+    net.to(device)
+
     # Loss function
     criterion = nn.MSELoss()
     # Optimizer
@@ -57,6 +64,9 @@ if __name__ == '__main__':
 
             zernike = sample_batched['zernike']
             image = sample_batched['image']
+
+            image = image.to(device)
+            zernike = zernike.to(device)
 
             # Forward pass, backward pass, optimize
             outputs = net(image)
@@ -80,6 +90,9 @@ if __name__ == '__main__':
 
             zernike = sample_batched['zernike']
             image = sample_batched['image']
+
+            image = image.to(device)
+            zernike = zernike.to(device)
 
             outputs = net(image)
             loss = criterion(outputs, zernike)
