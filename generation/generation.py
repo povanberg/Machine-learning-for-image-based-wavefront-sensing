@@ -80,7 +80,7 @@ if __name__ == "__main__":
     plt.title('Zernike coefficient distribution')
     plt.xlabel('zernike modes')
     plt.ylabel('rms (nm)')
-    plt.show()
+    #plt.show()
     plt.clf()
 
     # Create the PSF image, 128x128 + 2x2 padding FTT over sampling
@@ -121,7 +121,12 @@ if __name__ == "__main__":
     t_soapy = time.time() - t0
     print('Propagation and saving finished in {0:2f}s'.format(t_soapy))
 
-    #---------------------------------------------------------------------------
+    # Save best PSF
+    outfile = "../dataset/psf_reference.fits"
+    hdu_primary = fits.PrimaryHDU(np.zeros(20))
+    hdu_reference = fits.ImageHDU(psfObj.bestPSF, name='REFERENCE')
+    hdu = fits.HDUList([hdu_primary, hdu_reference])
+    hdu.writeto(outfile, overwrite=True)
 
     # Introduce norm, to highlight features
     from astropy.visualization import simple_norm
@@ -152,6 +157,6 @@ if __name__ == "__main__":
     im4 = axarr[1, 1].imshow(transform(psfs_out[id,:,:], clip=False))
     axarr[1, 1].set_title("Out")
     add_colorbar(axarr[1, 1], f, im4)
-    plt.show()
+    #plt.show()
 
 

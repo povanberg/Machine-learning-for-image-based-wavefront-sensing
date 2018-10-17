@@ -9,9 +9,12 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import transforms
 from dataset import psf_dataset, splitDataLoader, ToTensor, Normalize
+from utils_visdom import VisdomWebServer
+import matplotlib.pyplot as plt
 
 
-def train(model, dataset, optimizer, criterion, split=[0.9, 0.1], batch_size=32, n_epoch=1, model_dir='./', random_seed=None):
+def train(model, dataset, optimizer, criterion, split=[0.9, 0.1],
+          batch_size=32, n_epoch=1, model_dir='./', random_seed=None, visdom=False):
 
     # Prepare dataset
     train_dataloader, val_dataloader = splitDataLoader(
@@ -26,6 +29,10 @@ def train(model, dataset, optimizer, criterion, split=[0.9, 0.1], batch_size=32,
     utils.set_logger(log_path)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     logging.info('Training started on %s' % (device))
+
+    # Visdom
+    if visdom:
+        vis = VisdomWebServer()
 
     # Metrics
     metrics_path = os.path.join(model_dir, 'metrics.json')
@@ -53,7 +60,6 @@ def train(model, dataset, optimizer, criterion, split=[0.9, 0.1], batch_size=32,
     # Start training
     for epoch in range(n_epoch):
 
-        val_loss = 0.0
         train_loss = 0.0
         epoch_time = time.time()
 
@@ -73,16 +79,10 @@ def train(model, dataset, optimizer, criterion, split=[0.9, 0.1], batch_size=32,
 
         logging.info('[%i/%i] Train loss: %f ' % (epoch+1, n_epoch, train_loss))
 
-        model.eval()
-        for i_batch, sample_batched in enumerate(val_dataloader):
-
-            zernike = sample_batched['zernike'].to(device)
-            image = sample_batched['image'].to(device)
-
-            estimated_zernike = model(image)
-            loss = criterion(estimated_zernike, zernike)
-
-            val_loss += float(loss) / len(val_dataloader)
+        val_loss = eval(model,
+                        dataloader=val_dataloader,
+                        criterion=criterion,
+                        device=device)
 
         logging.info('[%i/%i] Validation loss: %f ' % (epoch+1, n_epoch, val_loss))
 
@@ -98,6 +98,9 @@ def train(model, dataset, optimizer, criterion, split=[0.9, 0.1], batch_size=32,
             with open(metrics_path, 'w') as f:
                 json.dump(metrics, f, indent=4)
 
+        if visdom:
+            vis.update(metrics)
+
         logging.info('[%i/%i] Time: %f s' % (epoch + 1, n_epoch, time.time()-epoch_time))
         logging.info('-'*30)
 
@@ -105,6 +108,22 @@ def train(model, dataset, optimizer, criterion, split=[0.9, 0.1], batch_size=32,
     with open(metrics_path, 'w') as f:
         json.dump(metrics, f, indent=4)
     logging.info('All epochs completed in %f s' % (time.time() - train_time))
+
+def eval(model, dataloader, criterion, device):
+
+    model.eval()
+    val_loss = 0.0
+
+    for i_batch, sample_batched in enumerate(dataloader):
+        zernike = sample_batched['zernike'].to(device)
+        image = sample_batched['image'].to(device)
+
+        estimated_zernike = model(image)
+        loss = criterion(estimated_zernike, zernike)
+
+        val_loss += float(loss) / len(dataloader)
+
+    return val_loss
 
 if __name__ == "__main__":
 
@@ -169,16 +188,5 @@ if __name__ == "__main__":
           random_seed=42,
           model_dir='model_test/')
 
-
-    import matplotlib.pyplot as plt
-    import json
-
-    with open('experiments/example/metrics.json') as f:
-        metrics = json.load(f)
-
-    plt.figure()
-    plt.plot(metrics['train_loss'], label='Training loss', color='blue')
-    plt.plot(metrics['val_loss'], label='Validation loss', color='red')
-    plt.legend()
-    plt.xlim(0, 20)
-    plt.show()
+    metrics = get_metrics('experiments/example')
+    plot_learningcurve(metrics)

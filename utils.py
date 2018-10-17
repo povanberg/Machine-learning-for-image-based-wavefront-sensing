@@ -1,6 +1,7 @@
 import logging
 import json
 import os
+import matplotlib.pyplot as plt
 
 def set_logger(log_path):
     """
@@ -69,3 +70,21 @@ class Params():
         return self.__dict__
 
 
+def plot_learningcurve(metrics):
+
+    plt.figure()
+    plt.plot(metrics['train_loss'], label='Training loss', color='blue')
+    plt.plot(metrics['val_loss'], label='Validation loss', color='red')
+    plt.legend()
+    plt.grid()
+    plt.xlim(0, metrics['n_epoch'])
+
+def get_metrics(model_dir=''):
+
+    metrics_path = os.path.join(model_dir, 'metrics.json')
+
+    with open(metrics_path) as f:
+        metrics = json.load(f)
+        return metrics
+
+    return None
