@@ -70,14 +70,20 @@ class Params():
         return self.__dict__
 
 
-def plot_learningcurve(metrics):
+def plot_learningcurve(metrics, save=True, name='lrcurve.pdf'):
 
     plt.figure()
     plt.plot(metrics['train_loss'], label='Training loss', color='blue')
     plt.plot(metrics['val_loss'], label='Validation loss', color='red')
     plt.legend()
     plt.grid()
+    plt.xlabel('epochs')
+    plt.ylabel('loss')
     plt.xlim(0, metrics['n_epoch'])
+    if save:
+        plt.savefig(name)
+    plt.show()
+
 
 def get_metrics(model_dir=''):
 

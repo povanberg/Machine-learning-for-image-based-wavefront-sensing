@@ -10,7 +10,6 @@ import torch.optim as optim
 from torchvision import transforms
 from dataset import psf_dataset, splitDataLoader, ToTensor, Normalize
 from utils_visdom import VisdomWebServer
-import matplotlib.pyplot as plt
 
 
 def train(model, dataset, optimizer, criterion, split=[0.9, 0.1],
@@ -126,6 +125,8 @@ def eval(model, dataloader, criterion, device):
     return val_loss
 
 if __name__ == "__main__":
+
+    from utils import get_metrics, plot_learningcurve
 
     print('Training simple model')
     print('-'*22)
