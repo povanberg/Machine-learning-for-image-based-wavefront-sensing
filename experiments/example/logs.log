@@ -437,3 +437,5 @@
 [2018-10-17 20:52:34,074][INFO] [50/50] Time: 1.926353 s
 [2018-10-17 20:52:34,076][INFO] ------------------------------
 [2018-10-17 20:52:34,078][INFO] All epochs completed in 100.625842 s
+[2018-10-17 20:57:36,995][ERROR] Connection is already closed.
+[2018-10-17 20:57:40,000][INFO] Socket refused connection, running socketless

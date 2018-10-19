@@ -29,7 +29,6 @@ class VisdomWebServer(object):
               plt.plot(metrics['val_loss'], label='Validation loss', color='red')
               plt.legend()
               plt.grid()
-              plt.xlim(0, metrics['n_epoch'])
               self.vis.matplot(plt, win='lrcurve')
               plt.close()
               plt.clf()

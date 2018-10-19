@@ -13,7 +13,7 @@ from utils_visdom import VisdomWebServer
 
 
 def train(model, dataset, optimizer, criterion, split=[0.9, 0.1],
-          batch_size=32, n_epoch=1, model_dir='./', random_seed=None, visdom=False):
+          batch_size=32, n_epoch=1, model_dir='./', random_seed=None, visdom=False, decay=False):
 
     # Prepare dataset
     train_dataloader, val_dataloader = splitDataLoader(
@@ -22,6 +22,7 @@ def train(model, dataset, optimizer, criterion, split=[0.9, 0.1],
                                                         batch_size=batch_size,
                                                         random_seed=random_seed
                                                        )
+    
 
     # Logging
     log_path = os.path.join(model_dir, 'logs.log')
@@ -61,21 +62,34 @@ def train(model, dataset, optimizer, criterion, split=[0.9, 0.1],
 
         train_loss = 0.0
         epoch_time = time.time()
+        
+        if decay:
+            lr_new = adjust_learning_rate(optimizer, epoch, lr)
+            if lr_new != lr:
+                logging.info('Learning rate updated: %f ' % (lr_new))
 
-        model.train()
         for i_batch, sample_batched in enumerate(train_dataloader):
 
+            model.train()
             zernike = sample_batched['zernike'].to(device)
             image = sample_batched['image'].to(device)
 
-            estimated_zernike = model(image)
-            loss = criterion(estimated_zernike, zernike)
             optimizer.zero_grad()
+            
+            estimated_zernike, aux = model(image)
+            if isinstance(estimated_zernike, tuple):
+                loss = sum((criterion(o,zernike) for o in estimated_zernike))
+            else:
+                loss = criterion(estimated_zernike, zernike)
+            #loss = criterion(estimated_zernike, zernike)
             loss.backward()
             optimizer.step()
 
-            train_loss += float(loss) / len(train_dataloader)
-
+            #model.eval()
+            #estimated_zernike = model(image)
+            #loss = criterion(estimated_zernike, zernike)
+            train_loss += float(loss) / len(train_dataloader)  
+        
         logging.info('[%i/%i] Train loss: %f ' % (epoch+1, n_epoch, train_loss))
 
         val_loss = eval(model,
@@ -94,8 +108,8 @@ def train(model, dataset, optimizer, criterion, split=[0.9, 0.1],
             model_path = os.path.join(model_dir, 'model.pth')
             torch.save(model.state_dict(), model_path)
 
-            with open(metrics_path, 'w') as f:
-                json.dump(metrics, f, indent=4)
+        with open(metrics_path, 'w') as f:
+            json.dump(metrics, f, indent=4)
 
         if visdom:
             vis.update(metrics)
@@ -108,6 +122,12 @@ def train(model, dataset, optimizer, criterion, split=[0.9, 0.1],
         json.dump(metrics, f, indent=4)
     logging.info('All epochs completed in %f s' % (time.time() - train_time))
 
+def adjust_learning_rate(optimizer, epoch, lr):
+    lr_new = lr * (0.1 ** (epoch // 40))
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr_new   
+    return lr_new    
+    
 def eval(model, dataloader, criterion, device):
 
     model.eval()
