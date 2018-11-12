@@ -10,13 +10,13 @@ For incoming wavelength λ of 2200 micrometers and input size of 128x128 px.
 
 | Model | RMSE Zernike | RMSE Phase |
 | --- | --- | --- |
-| Custom v0.3 | 0 | 0 |
+| [Custom v0.3](experiments/custom_v0.3) | 7.91 | 31.33 |
 | Resnet-50 | 0 | 0 |
 | InceptionV3 | 0 | 0 |
 | Custom v0.2 | 0 | 0 |
 | Custom v0.1 | 0 | 0 |
 
-The root mean squared error are normalized with respect to λ.
+The root mean squared error are expressed in nanometers.
 
 ## Algorithms
 
