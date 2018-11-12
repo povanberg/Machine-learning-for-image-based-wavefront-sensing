@@ -10,17 +10,15 @@ For incoming wavelength λ of 2200 micrometers and input size of 128x128 px.
 
 | Model | RMSE Zernike | RMSE Phase |
 | --- | --- | --- |
-| [Custom v0.3](experiments/custom_v0.3) | 7.91 | 31.33 |
-| Resnet-50 | 0 | 0 |
-| InceptionV3 | 0 | 0 |
+| [Custom v0.3](experiments/custom_v0.3) | 7.91 nm | 31.33 nm |
+| [InceptionV3](experiments/inception)  | 21.92 nm | 90.55 nm |
+| [Resnet-50](experiments/resnet) | 0 | 0 |
 | Custom v0.2 | 0 | 0 |
 | Custom v0.1 | 0 | 0 |
 
-The root mean squared error are expressed in nanometers.
-
 ## Algorithms
 
-Gerchberg-Saxton algorithm is available here.
+Gerchberg-Saxton algorithm is available [here](algorithms/Gerchberg–Saxton.ipynb).
 
 ## Monitoring
 
