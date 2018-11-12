@@ -77,7 +77,7 @@ def plotMetrics(json_path, key_name, limit=93):
             plt.hlines(limit,0, len(metrics['gpu0'][key_name]), color='red', linestyle='--')
             plt.grid()
             plt.legend()
-            plt.title('Temperature')
+            plt.title(key_name)
             plt.show()
 
 # How to use:
