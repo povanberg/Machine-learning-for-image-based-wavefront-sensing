@@ -22,4 +22,4 @@ Gerchberg-Saxton algorithm is available [here](algorithms/Gerchberg–Saxton.ipy
 
 ## Monitoring
 
-GPU monitoring informations are available here.
+GPU monitoring informations are available [here](monitoring.ipynb).
