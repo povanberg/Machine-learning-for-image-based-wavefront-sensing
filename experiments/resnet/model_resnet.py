@@ -11,27 +11,28 @@ class Net(nn.Module):
         super(Net, self).__init__()
 
         self.resnet = models.resnet50(pretrained=True)   
+        
+        for param in self.resnet.parameters():
+            param.requires_grad = True
        
-        # Input size 2x128x128 -> 3x255x255
-        first_conv_layer = [nn.ConvTranspose2d(2, 3, kernel_size=3, stride=2, padding=1, dilation=1, groups=1, bias=True),
+        # Input size 2x128x128 -> 2x224x224
+        first_conv_layer = [nn.Conv2d(2, 3, kernel_size=1, stride=1, bias=True),
+                            nn.AdaptiveMaxPool2d(224),
                             self.resnet.conv1]
         self.resnet.conv1= nn.Sequential(*first_conv_layer)
 
         # Fit classifier
         self.resnet.fc = nn.Sequential(
-                                nn.Linear(8192, 2048),
+                                nn.Linear(2048, 1024),
                                 nn.ReLU(inplace=True),
-                                nn.BatchNorm1d(2048),
-                                nn.Linear(2048, 2048),
+                                #nn.BatchNorm1d(1024),
+                                nn.Linear(1024, 1024),
                                 nn.ReLU(inplace=True),
-                                nn.BatchNorm1d(2048),
-                                nn.Linear(2048, 20)
+                                #nn.BatchNorm1d(1024),
+                                nn.Linear(1024, 20)
                             )    
     
-        for param in self.resnet.parameters():
-            param.requires_grad = True
-    
-        self.phase2dlayer = Phase2DLayer()
+        self.phase2dlayer = Phase2DLayer(20,128)
 
     def forward(self, x):
         # 128x128x2
@@ -43,7 +44,7 @@ class Phase2D(torch.autograd.Function):
     
     @staticmethod
     def forward(ctx, input, z_basis):
-        ctx.z_basis = z_basis.cuda()
+        ctx.z_basis = z_basis.cpu()#.cuda()
         output = input[:,:, None, None] * ctx.z_basis[None, 1:,:,:]
         return torch.sum(output, dim=1)
 
