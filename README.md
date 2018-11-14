@@ -13,8 +13,8 @@ For incoming wavelength λ of 2200 micrometers and input size of 128x128 px.
 | [Custom v0.3](experiments/custom_v0.3) | 2.44 nm | 10.91 nm | [check](experiments/custom_v0.3/evaluation.ipynb) |
 | [Resnet-50](experiments/resnet) | 4.62 nm | 20.66 nm | [check](experiments/resnet/evaluation.ipynb)  |
 | [InceptionV3](experiments/inception)  | 21.92 nm | 90.55 nm | check |
-| Custom v0.2 | 0 | 0 |
-| Custom v0.1 | 0 | 0 |
+| - | 0 | 0 |
+| - | 0 | 0 |
 
 ## Algorithms
 
