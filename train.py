@@ -12,217 +12,149 @@ from dataset import psf_dataset, splitDataLoader, ToTensor, Normalize
 from utils_visdom import VisdomWebServer
 import aotools
 
-def train(model, dataset, optimizer, criterion, split=[0.9, 0.1],
-          batch_size=32, n_epoch=1, model_dir='./', random_seed=None, visdom=False, decay=False):
-
-    # Prepare dataset
-    train_dataloader, val_dataloader = splitDataLoader(
-                                                        dataset,
-                                                        split=split,
-                                                        batch_size=batch_size,
-                                                        random_seed=random_seed
-                                                       )
+def train(model, dataset, optimizer, criterion, split=[0.9, 0.1], batch_size=32, 
+          n_epochs=1, model_dir='./', random_seed=None, visdom=False):
     
-
+    # Create directory if doesn't exist
+    if not os.path.exists(model_dir):
+        os.makedirs(model_dir)
+    
     # Logging
     log_path = os.path.join(model_dir, 'logs.log')
     utils.set_logger(log_path)
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    logging.info('Training started on %s' % (device))
-
-    # Visdom
+    
+    # Visdom support
     if visdom:
         vis = VisdomWebServer()
-
+        
+    # Reduce lr by 10 every 10 epoch without improvement
+    scheduler = None # optim.lr_scheduler.StepLR(optimizer, step_size=350, gamma=0.1) 
+        
     # Metrics
     metrics_path = os.path.join(model_dir, 'metrics.json')
-    for p in optimizer.param_groups:
-        lr = p['lr']
+    
     metrics = {
         'model': model_dir,
         'optimizer': optimizer.__class__.__name__,
         'criterion': criterion.__class__.__name__,
-        'dataset_size': len(dataset),
-        'train_size': split[0]*len(dataset),
-        'test_size': split[1]*len(dataset),
-        'n_epoch': n_epoch,
+        'scheduler': scheduler.__class__.__name__,
+        'dataset_size': int(len(dataset)),
+        'train_size': int(split[0]*len(dataset)),
+        'test_size': int(split[1]*len(dataset)),
+        'n_epoch': n_epochs,
         'batch_size': batch_size,
-        'learning_rate': lr,
+        'learning_rate': get_lr(optimizer),
         'train_loss': [],
-        'val_loss': []
+        'val_loss': [],
+        'zernike_train_loss': [],
+        'zernike_val_loss': []
     }
-    with open(metrics_path, 'w') as f:
-        json.dump(metrics, f, indent=4)
-
-    min_loss = 0.0
-    train_time = time.time()
-
-    z_basis = torch.as_tensor(aotools.zernikeArray(21, 128, norm='rms'), 
-                                       dtype=torch.float32)
     
-    # Start training
-    for epoch in range(n_epoch):
-
-        train_loss = 0.0
+    # Zernike basis
+    z_basis = torch.as_tensor(aotools.zernikeArray(21, 128, norm='rms'), dtype=torch.float32)
+    
+    # Dataset
+    dataloaders = {}
+    dataloaders['train'], dataloaders['val'] = splitDataLoader(dataset, split=split, 
+                                                             batch_size=batch_size, random_seed=random_seed)
+    
+    # Device
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    #logging.info('Training started on %s' % (device))
+    #if torch.cuda.device_count() > 1:
+    #    model = nn.DataParallel(model)
+    #    model.to(device)  
+   
+    # Training
+    since = time.time()
+    dataset_size = {
+        'train':int(split[0]*len(dataset)),
+        'val':int(split[1]*len(dataset))
+    }
+    best_loss = 0.0
+    
+    for epoch in range(n_epochs):
+        
+        logging.info('-'*30)
         epoch_time = time.time()
         
-        if decay:
-            lr_new = adjust_learning_rate(optimizer, epoch, lr)
-            if lr_new != lr:
-                logging.info('Learning rate updated: %f ' % (lr_new))
+        # Each epoch has a training and validation phase
+        for phase in ['train', 'val']:
+            if phase == 'train':
+                model.train()  # Set model to training mode
+            else:
+                model.eval()   # Set model to evaluate mode
 
-        for i_batch, sample_batched in enumerate(train_dataloader):
-
-            model.train()
-            zernike = sample_batched['zernike'].to(device)
-            image = sample_batched['image'].to(device)
-            optimizer.zero_grad()
+            running_loss = 0.0
+            zernike_loss =0.0
             
-            #estimated_zernike, aux = model(image)
-            #if isinstance(estimated_zernike, tuple):
-            #    loss = sum((criterion(o,zernike) for o in estimated_zernike))
-            #else:
-            #    loss = criterion(estimated_zernike, zernike)
-            z_basis = z_basis.to(device)
-            z = torch.sum((zernike[:,:, None, None] * z_basis[None, 1:,:,:]), dim=1)
+            for _, sample in enumerate(dataloaders[phase]):
+                # GPU support 
+                inputs = sample['image'].to(device)
+                z_coeffs_0 = sample['zernike'].to(device)
+                z_basis_0 = z_basis.to(device)
+                phase_0 = get_phase(z_coeffs_0, z_basis_0)
+                
+                # zero the parameter gradients
+                optimizer.zero_grad()
+                
+                # forward: track history if only in train
+                with torch.set_grad_enabled(phase == 'train'):
+                    # Network return phase and zernike coeffs
+                    phase_, z_coeffs = model(inputs)
+                    loss = criterion(phase_, phase_0)
+                    z_loss = criterion(z_coeffs, z_coeffs_0)
+                    
+                    # backward
+                    if phase == 'train':
+                        loss.backward()
+                        optimizer.step()   
+                     
+                    # Dropout and BatchNorm support
+                    #model.eval()
+                    #phase_, z_coeffs = model(inputs)
+                    #loss = criterion(phase_, phase_0)
+                    #z_loss = criterion(z_coeffs, z_coeffs_0)
+                    #model.train()
+                    
+                    zernike_loss += z_loss.item() * inputs.size(0)  
+                    running_loss += loss.item() * inputs.size(0)
+                    
+            logging.info('[%i/%i] %s loss: %f' % (epoch+1, n_epochs, phase, running_loss / dataset_size[phase]))
             
-            estimated_zernike = model(image)
-            loss = criterion(estimated_zernike, z)
-            loss.backward()
-            optimizer.step()
-
-            #model.eval()
-            #estimated_zernike = model(image)
-            #loss = criterion(estimated_zernike, zernike)
-            train_loss += float(loss) / len(train_dataloader)  
+            # Update metrics
+            metrics[phase+'_loss'].append(running_loss / dataset_size[phase])
+            metrics['zernike_'+phase+'_loss'].append(zernike_loss / dataset_size[phase])
+                
+            # Adaptive learning rate
+            if phase == 'val':
+                #scheduler.step()
+                # Save weigths
+                if epoch == 0 or running_loss < best_loss:
+                    best_loss = running_loss
+                    model_path = os.path.join(model_dir, 'model.pth')
+                    torch.save(model.state_dict(), model_path)
+                # Save metrics
+                with open(metrics_path, 'w') as f:
+                    json.dump(metrics, f, indent=4) 
+                # Visdom update 
+                if visdom:
+                    vis.update(metrics)
+                    
+        logging.info('[%i/%i] Time: %f s' % (epoch + 1, n_epochs, time.time()-epoch_time))
         
-        logging.info('[%i/%i] Train loss: %f ' % (epoch+1, n_epoch, train_loss))
+    time_elapsed = time.time() - since    
+    logging.info('[-----] All epochs completed in {:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
 
-        model.eval()
-        val_loss = 0.0
+            
+        
+def get_lr(optimizer):
+    for p in optimizer.param_groups:
+        lr = p['lr']
+    return lr  
 
-        for i_batch, sample_batched in enumerate(val_dataloader):
-            zernike = sample_batched['zernike'].to(device)
-            image = sample_batched['image'].to(device)
 
-            z_basis = z_basis.to(device)
-            z = torch.sum((zernike[:,:, None, None] * z_basis[None, 1:,:,:]), dim=1)
-            estimated_zernike = model(image)
-            loss = criterion(estimated_zernike, z)
-
-            val_loss += float(loss) / len(val_dataloader)
-
-        logging.info('[%i/%i] Validation loss: %f ' % (epoch+1, n_epoch, val_loss))
-
-        metrics['train_loss'].append(train_loss)
-        metrics['val_loss'].append(val_loss)
-
-        # Save model and metrics
-        if epoch == 0 or val_loss < min_loss:
-            min_loss = val_loss
-            model_path = os.path.join(model_dir, 'model.pth')
-            torch.save(model.state_dict(), model_path)
-
-        with open(metrics_path, 'w') as f:
-            json.dump(metrics, f, indent=4)
-
-        if visdom:
-            vis.update(metrics)
-
-        logging.info('[%i/%i] Time: %f s' % (epoch + 1, n_epoch, time.time()-epoch_time))
-        logging.info('-'*30)
-
-    # Save metrics
-    with open(metrics_path, 'w') as f:
-        json.dump(metrics, f, indent=4)
-    logging.info('All epochs completed in %f s' % (time.time() - train_time))
-
-def adjust_learning_rate(optimizer, epoch, lr):
-    lr_new = lr * (0.1 ** (epoch // 40))
-    for param_group in optimizer.param_groups:
-        param_group['lr'] = lr_new   
-    return lr_new    
-    
-def eval(model, dataloader, criterion, device):
-
-    model.eval()
-    val_loss = 0.0
-
-    for i_batch, sample_batched in enumerate(dataloader):
-        zernike = sample_batched['zernike'].to(device)
-        image = sample_batched['image'].to(device)
-
-        estimated_zernike = model(image)
-        loss = criterion(estimated_zernike, zernike)
-
-        val_loss += float(loss) / len(dataloader)
-
-    return val_loss
-
-if __name__ == "__main__":
-
-    from utils import get_metrics, plot_learningcurve
-
-    print('Training simple model')
-    print('-'*22)
-
-    class Net(nn.Module):
-
-        def __init__(self):
-            super(Net, self).__init__()
-
-            self.conv1 = nn.Conv2d(2, 20, kernel_size=3, stride=1, padding=1)
-            self.conv2 = nn.Conv2d(20, 40, kernel_size=3, stride=1, padding=1)
-            self.conv3 = nn.Conv2d(40, 20, kernel_size=1, stride=1, padding=0)
-
-            self.pool = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
-
-            self.fc1 = torch.nn.Linear(16 * 16 * 20, 256)
-            self.fc2 = torch.nn.Linear(256, 20)
-
-        def forward(self, x):
-            # 128x128x2
-            x = F.relu(self.conv1(x))       # 128x128x20
-            x = self.pool(x)                # 64x64x20
-            x = F.relu(self.conv2(x))       # 64x64x40
-            x = self.pool(x)                # 32x32x40
-            x = F.relu(self.conv3(x))       # 32x32x20
-            x = self.pool(x)                # 16x16x20
-            x = x.view(-1, 20 * 16 * 16)    # 1x5120      (Reshape for fully connected layer)
-            x = F.relu(self.fc1(x))         # 1x256
-            x = self.fc2(x)                 # 1x20                     (Zernike coeffs)
-            return x
-
-    model = Net()
-
-    # GPU support
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    if torch.cuda.device_count() > 1:
-        model = nn.DataParallel(model)
-    model.to(device)
-
-    # Loss function and optimizer
-    criterion = nn.MSELoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.01)
-
-    # Dataset
-    data_dir = 'dataset/'
-    dataset_size = 10
-    dataset = psf_dataset(
-        root_dir=data_dir,
-        size=dataset_size,
-        transform=transforms.Compose([Normalize(data_dir),ToTensor()])
-    )
-
-    # Reproducibility
-    random_seed = 42
-
-    train(model, dataset, optimizer, criterion,
-          split=[0.9, 0.1],
-          batch_size=32,
-          n_epoch=20,
-          random_seed=42,
-          model_dir='model_test/')
-
-    metrics = get_metrics('experiments/example')
-    plot_learningcurve(metrics)
+def get_phase(z_coeffs, z_basis):
+    z_phase = z_coeffs[:,:, None, None] * z_basis[None, 1:,:,:]
+    total_phase = torch.sum(z_phase, dim=1)
+    return total_phase

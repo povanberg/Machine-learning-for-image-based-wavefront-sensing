@@ -50,9 +50,9 @@ class Normalize(object):
     def __init__(self, root_dir):
 
         self.root_dir = root_dir
-        self.reference_name = self.root_dir + 'psf_reference.fits'
-        self.reference_hdu = fits.open(self.reference_name)
-        self.norm = np.amax(self.reference_hdu[1].data)
+        #self.reference_name = self.root_dir + 'psf_reference.fits'
+        #self.reference_hdu = fits.open(self.reference_name)
+        #self.norm = np.amax(self.reference_hdu[1].data)
 
     def __call__(self, sample):
         zernike, image = sample['zernike'], sample['image']
