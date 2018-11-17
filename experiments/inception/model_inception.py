@@ -16,19 +16,20 @@ class Net(nn.Module):
             param.requires_grad = True
     
         # Input size 
-        first_conv_layer = [nn.ConvTranspose2d(2, 3, kernel_size=3, stride=3, padding=42, dilation=1, groups=1, bias=True),
+        first_conv_layer = [nn.Conv2d(2, 3, kernel_size=1, stride=1, bias=True),
+                            nn.AdaptiveMaxPool2d(299),
                             self.inception.Conv2d_1a_3x3]
         self.inception.Conv2d_1a_3x3= nn.Sequential(*first_conv_layer)
 
         # Fit classifier
         self.inception.fc = nn.Sequential(
-                                nn.Linear(2048, 2048),
-                                nn.ReLU(inplace=True),
-                                nn.BatchNorm1d(2048),
-                                nn.Linear(2048, 2048),
-                                nn.ReLU(inplace=True),
-                                nn.BatchNorm1d(2048),
-                                nn.Linear(2048, 20)
+                                nn.Linear(2048, 20),
+                                #nn.ReLU(inplace=True),
+                                #nn.BatchNorm1d(2048),
+                                #nn.Linear(2048, 1024),
+                                #nn.ReLU(inplace=True),
+                                #nn.BatchNorm1d(2048),
+                                #nn.Linear(1024, 20)
                             )    
     
         self.phase2dlayer = Phase2DLayer(20,128)
@@ -45,7 +46,7 @@ class Phase2D(torch.autograd.Function):
     
     @staticmethod
     def forward(ctx, input, z_basis):
-        ctx.z_basis = z_basis.cuda()
+        ctx.z_basis = z_basis.cpu() #.cuda()
         output = input[:,:, None, None] * ctx.z_basis[None, 1:,:,:]
         return torch.sum(output, dim=1)
 

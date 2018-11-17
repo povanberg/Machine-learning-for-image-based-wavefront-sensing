@@ -14,7 +14,7 @@ def visualize(dataset, model=None):
     wavelength = 2200 * (10**-9)
     
     # Soapy config
-    SOAPY_CONF = "../../generation/psf.yaml"
+    SOAPY_CONF = "../generation/psf.yaml"
     # Pixel size of science camera
     gridsize = 128
     # Telescope diameter

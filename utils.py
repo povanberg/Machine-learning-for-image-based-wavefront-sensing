@@ -74,8 +74,10 @@ class Params():
 
 def plot_learningcurve(metrics, save=True, show=True, name='lrcurve.pdf', 
                        xlim=[None,None], ylim=[None,None], zernike=False):
-
+    import numpy as np
     plt.figure()
+    #x = np.arange(200)
+    #plt.plot(x, np.array(metrics['train_loss' if not zernike else 'zernike_train_loss'])[x]/(0.8*np.log(x)), label='Training loss', color='blue')
     plt.plot(metrics['train_loss' if not zernike else 'zernike_train_loss'][:], label='Training loss', color='blue')
     plt.plot(metrics['val_loss' if not zernike else 'zernike_val_loss'][:], label='Validation loss', color='red')
     plt.legend()
