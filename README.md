@@ -11,8 +11,8 @@ For incoming wavelength λ of 2200 micrometers and input size of 128x128 px.
 | Model | RMSE Zernike | RMSE Phase | Showcase |
 | --- | --- | --- | --- |
 | [Custom v0.3](experiments/custom_v0.3) | 2.44 nm | 10.91 nm | [check](experiments/custom_v0.3/evaluation.ipynb) |
+| [InceptionV3](experiments/inception)  | 3.17 nm | 14.18 nm | [check](experiments/inception/evaluation.ipynb) |
 | [Resnet-50](experiments/resnet) | 4.62 nm | 20.66 nm | [check](experiments/resnet/evaluation.ipynb)  |
-| [InceptionV3](experiments/inception)  | 21.92 nm | 90.55 nm | check |
 | - | 0 | 0 |
 | - | 0 | 0 |
 
