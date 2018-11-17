@@ -8,13 +8,13 @@ Light detectors, such as photographic plates or CCDs, measure only the intensity
 
 For incoming wavelength λ of 2200 micrometers and input size of 128x128 px. 
 
-| Model | RMSE Zernike | RMSE Phase |
-| --- | --- | --- |
-| [Custom v0.3](experiments/custom_v0.3) | 7.91 nm | 31.33 nm |
-| [InceptionV3](experiments/inception)  | 21.92 nm | 90.55 nm |
-| [Resnet-50](experiments/resnet) | 0 | 0 |
-| Custom v0.2 | 0 | 0 |
-| Custom v0.1 | 0 | 0 |
+| Model | RMSE Zernike | RMSE Phase | Showcase |
+| --- | --- | --- | --- |
+| [Custom v0.3](experiments/custom_v0.3) | 2.44 nm | 10.91 nm | [check](experiments/custom_v0.3/evaluation.ipynb) |
+| [Resnet-50](experiments/resnet) | 4.62 nm | 20.66 nm | [check](experiments/resnet/evaluation.ipynb)  |
+| [InceptionV3](experiments/inception)  | 21.92 nm | 90.55 nm | check |
+| - | 0 | 0 |
+| - | 0 | 0 |
 
 ## Algorithms
 
