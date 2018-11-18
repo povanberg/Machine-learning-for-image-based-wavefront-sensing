@@ -14,7 +14,7 @@ def visualize(dataset, model=None):
     wavelength = 2200 * (10**-9)
     
     # Soapy config
-    SOAPY_CONF = "../generation/psf.yaml"
+    SOAPY_CONF = "../../generation/psf.yaml"
     # Pixel size of science camera
     gridsize = 128
     # Telescope diameter
@@ -41,7 +41,7 @@ def visualize(dataset, model=None):
 
     n = 3
     np.random.seed(44)
-    n_id = [13, 6, 7]
+    n_id = [16, 78, 53]#[13, 6, 7]
     z_coeffs = np.zeros(shape=(n,20), dtype=np.float64)
     psf_in = np.zeros(shape=(n,128,128), dtype=np.float64)
     psf_out = np.zeros(shape=(n,128,128), dtype=np.float64)
