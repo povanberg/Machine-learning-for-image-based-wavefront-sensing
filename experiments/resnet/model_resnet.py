@@ -23,13 +23,13 @@ class Net(nn.Module):
 
         # Fit classifier
         self.resnet.fc = nn.Sequential(
-                                nn.Linear(2048, 1024),
-                                nn.ReLU(inplace=True),
+                                nn.Linear(2048, 20),
+                                #nn.ReLU(inplace=True),
                                 #nn.BatchNorm1d(1024),
-                                nn.Linear(1024, 1024),
-                                nn.ReLU(inplace=True),
+                                #nn.Linear(1024, 1024),
+                                #nn.ReLU(inplace=True),
                                 #nn.BatchNorm1d(1024),
-                                nn.Linear(1024, 20)
+                                #nn.Linear(1024, 20)
                             )    
     
         self.phase2dlayer = Phase2DLayer(20,128)
@@ -44,7 +44,7 @@ class Phase2D(torch.autograd.Function):
     
     @staticmethod
     def forward(ctx, input, z_basis):
-        ctx.z_basis = z_basis.cpu()#.cuda()
+        ctx.z_basis = z_basis.cpu() #.cuda()
         output = input[:,:, None, None] * ctx.z_basis[None, 1:,:,:]
         return torch.sum(output, dim=1)
 

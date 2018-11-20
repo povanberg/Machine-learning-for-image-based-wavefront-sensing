@@ -46,7 +46,7 @@ class Phase2D(torch.autograd.Function):
     
     @staticmethod
     def forward(ctx, input, z_basis):
-        ctx.z_basis = z_basis.cpu() #.cuda()
+        ctx.z_basis = z_basis.cpu()#.cuda()
         output = input[:,:, None, None] * ctx.z_basis[None, 1:,:,:]
         return torch.sum(output, dim=1)
 
