@@ -1,0 +1,43 @@
+simName:
+pupilSize: 128
+
+nSci: 1
+nIters: 5000
+loopTime: 0.0025
+threads: 4
+
+verbosity: 2
+
+
+Atmosphere:
+  scrnNo: 1
+  scrnHeights: [0]
+  scrnStrengths: [1]
+  windDirs: [0]
+  windSpeeds: [5]
+  wholeScrnSize: 2048
+  r0: 0.1
+  L0: [100]
+  infinite: True
+
+Telescope:
+  telDiam: 10
+  obsDiam: 0
+  mask: circle
+  
+Reconstructor:
+  type: MVM
+
+
+Science:
+  0:
+    position: [0, 0]
+    FOV: 10.0
+    #pxlScale: 0.2
+    wavelength: 2.2e-6
+    pxls: 128
+    fftOversamp: 2
+    fftwThreads: 0
+
+fftwFlag: "FFTW_MEASURE"
+
