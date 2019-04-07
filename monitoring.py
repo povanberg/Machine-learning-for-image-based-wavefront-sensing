@@ -5,8 +5,10 @@ from threading import Timer
 from pynvml import *
 import matplotlib.pyplot as plt
 
+# Small codes dedicated to the monitoring of nvidia GPUs. 
+
 def getGPUMetrics():
-    # Metrics accuracy within 5%, see docs:
+    # Metrics accuracy within 1%, see docs:
     # docs.nvidia.com/deploy/nvml-api
     try:
         nvmlInit()
