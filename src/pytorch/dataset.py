@@ -36,9 +36,6 @@ class psf_dataset(Dataset):
 
 
 class Normalize(object):
-    def __init__(self, root_dir):
-        self.root_dir = root_dir
-
     def __call__(self, sample):
         phase, image = sample['phase'], sample['image']
         
@@ -60,6 +57,18 @@ class ToTensor(object):
         phase, image = sample['phase'], sample['image']
 
         return {'phase': torch.from_numpy(phase), 'image': torch.from_numpy(image)}
+
+class Noise(object):
+    def __call__(self, sample):
+        phase, image = sample['phase'], sample['image']
+        
+        noise_intensity = 1000
+        image[0] = minmax(image[0])
+        image[1] = minmax(image[1])
+        image[0] = np.random.poisson(lam=noise_intensity*image[0], size=None)
+        image[1] = np.random.poisson(lam=noise_intensity*image[1], size=None)
+
+        return {'phase': phase, 'image': image}
 
 
 def splitDataLoader(dataset, split=[0.9, 0.1], batch_size=32, random_seed=None, shuffle=True):

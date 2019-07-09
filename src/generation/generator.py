@@ -23,7 +23,7 @@ wavelength = 2.2e-6                             # Observational wavelength
 diameter = 10                                   # Telescope diameter
 pixelScale = 0.01                               # [''/px]s
 
-n_psfs = 3                                      # Number of PSFs
+n_psfs = 5                                      # Number of PSFs
 n_zernike = 100                                 # Number of Zernike polynomials
 i_zernike = np.arange(2, n_zernike + 2)         # Zernike polynomial indices (piston excluded)
 o_zernike= []                                   # Zernike polynomial radial Order, see J. Noll paper :

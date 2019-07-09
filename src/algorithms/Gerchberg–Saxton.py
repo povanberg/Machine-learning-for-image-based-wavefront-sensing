@@ -69,17 +69,18 @@ def GerchbergSaxton(target, source, phase, n_max=200, animation=True):
 if __name__ == '__main__':
 
     # Files
-    reference_file = 'references.fits'
-    psf_file = 'psf_1.fits'
+    #reference_file = 'references.fits'
+    psf_file = '../../dataset/psf_1.fits'
 
     # Data
     wavelength = 2200 * (10**(-9))  #[m]
     n=20
     z_basis = aotools.zernikeArray(n+1, 128, norm='rms') #[rad]
+    mask = aotools.circle(64, 128)
 
-    rv_HDU = fits.open(reference_file)
-    mask = rv_HDU[0].data # [0-1] function defining entrance pupil
-    psf_reference = rv_HDU[1].data # diffraction limited point spread function
+    #rv_HDU = fits.open(reference_file)
+    #mask = rv_HDU[0].data # [0-1] function defining entrance pupil
+    #psf_reference = rv_HDU[1].data # diffraction limited point spread function
 
     HDU = fits.open(psf_file)
     phase = utils.meterToRadian(HDU[1].data, wavelength* (10**(9)))
@@ -89,4 +90,4 @@ if __name__ == '__main__':
     psf_test = utils.removePadding(np.abs(h)**2)
 
     metrics = GerchbergSaxton(psf_test, mask, phase, n_max=200, animation=True)
-    metrics = np.array(metrics)
+

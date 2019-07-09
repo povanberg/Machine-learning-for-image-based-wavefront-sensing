@@ -1,3 +1,4 @@
+import aotools
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -10,8 +11,9 @@ def initAnimation():
     return f, axarr
 
 def updateAnimation(f, axarr, error, phase, phaseEst, psf, timer):
+
     f.suptitle('Algorithm time: {0:.5}s'.format(timer))
-    cmap = plt.cm.viridis
+    cmap = plt.cm.jet
     error = np.array(error)
     im1 = axarr[0, 0].plot(error[:, 1], linewidth=2.5)
     axarr[0, 0].grid(color='lightgrey', linestyle='--')
@@ -22,6 +24,9 @@ def updateAnimation(f, axarr, error, phase, phaseEst, psf, timer):
     cb2 = plt.colorbar(im2, ax=axarr[0, 1], fraction=0.046)
     axarr[0, 1].set_title("Point Spread function (strehl={0:.5f})".format(utils.strehl(phase-phaseEst)))
     axarr[0, 1].set_axis_off()
+    mask=aotools.circle(64, 128).astype(np.float64)
+    phase[mask<0.1]=None
+    phaseEst[mask<0.1]=None
     im3 = axarr[1, 0].imshow(phase, cmap=cmap)
     im3.set_clim(-np.pi,np.pi)
     cb3 = plt.colorbar(im3, ax=axarr[1, 0], fraction=0.046)
@@ -37,3 +42,5 @@ def updateAnimation(f, axarr, error, phase, phaseEst, psf, timer):
     cb2.remove()
     cb3.remove()
     cb4.remove()
+    phase[mask<0.1]=0
+    phaseEst[mask<0.1]=0

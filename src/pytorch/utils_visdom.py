@@ -28,8 +28,8 @@ class VisdomWebServer(object):
               plt.plot(metrics['val_loss'], label='Validation loss', color='#ff6b57')
               plt.legend()
               ax.spines['right'].set_visible(False)
-	      ax.spines['top'].set_visible(False)
-	      plt.grid(zorder=0, color='lightgray', linestyle='--')
+              ax.spines['top'].set_visible(False)
+              plt.grid(zorder=0, color='lightgray', linestyle='--')
               self.vis.matplot(plt, win='lrcurve')
               plt.close()
               plt.clf()
@@ -37,7 +37,7 @@ class VisdomWebServer(object):
               fig, ax = plt.subplots()
               plt.plot(metrics['learning_rate'], color='#32526e')
               ax.spines['right'].set_visible(False)
-	      ax.spines['top'].set_visible(False)
+              ax.spines['top'].set_visible(False)
               plt.grid(zorder=0, color='lightgray', linestyle='--')
               self.vis.matplot(plt, win='lr_rate')
               plt.close()
@@ -65,3 +65,4 @@ if __name__ == "__main__":
 
        visdom = VisdomWebServer()
        visdom.update(metrics)
+
